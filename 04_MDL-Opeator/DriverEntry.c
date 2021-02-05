@@ -71,8 +71,12 @@ VOID MDLOpeator()
   KdPrint(("szBuffer1: %ws\n", szBuffer1));
   KdPrint(("szBuffer2: %ws\n", szBuffer2));
 
-  // 取消对MDL结构体中虚拟内存的映射
+  // 5. 取消对MDL结构体中虚拟内存的映射
   MmUnmapLockedPages(szBuffer2, pMdl);
-  // 取消MDL分页内存的锁定
+  
+  // 6. 取消MDL分页内存的锁定
   MmUnlockPages(pMdl);
+
+  // 7. 释放MDL所占内存
+  IoFreeMdl(pMdl);
 }
