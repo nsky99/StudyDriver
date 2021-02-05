@@ -19,6 +19,16 @@ VOID DriverUnload(PDRIVER_OBJECT pDriver)
   UNREFERENCED_PARAMETER(pDriver);
 }
 
+
+/* MDL使用的操作
+* 1、为MDL描述符分配内存空间 IoAllocateMdl
+* 2、对MDL进行配置 - 分页使用 MmProbeAndLockPages - 非分页使用 MmBuildMdlForNonPagedPool
+* 3、映射新的虚拟内存 MmMapLockedPagesSpecifyCache / MmMapLockedPages
+* 4、操作新的虚拟内存 - 他们两个指向同一个物理页
+* 5、取消对MDL结构体中虚拟内存的映射
+* 6、如果原来是非分页内存则不需要操作，如果原来是非分页内存需要取消MDL分页内存的锁定
+* 7、释放MDL所占内存
+*/
 VOID MDLOpeator()
 {
 
