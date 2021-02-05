@@ -14,7 +14,8 @@
 // 卸载驱动，用于驱动卸载的清理工作
 VOID DriverUnload(PDRIVER_OBJECT pDriver);
 
-
+// 遍历系统所有驱动
+VOID EnumAllDriver(PDRIVER_OBJECT pDriver);
 /*
   驱动对象: 类似于 GUI 程序中的应用程序本身，不能直接和 R3 进行交互，需要依赖设备对象传递 IRP
   typedef struct _DRIVER_OBJECT {
@@ -65,9 +66,10 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDriver, PUNICODE_STRING pRegPath)
 
   pDriver->DriverUnload = DriverUnload;
 
-  KdPrint(("%08X", (ULONG)pDriver->DriverInit));
+  KdPrint(("%08X\n", (ULONG)pDriver->DriverInit));
   KdPrint(("Driver Loading...\n"));
 
+  EnumAllDriver(pDriver);
   return STATUS_SUCCESS;
 }
 
@@ -76,4 +78,52 @@ VOID DriverUnload(PDRIVER_OBJECT pDriver)
 {
   UNREFERENCED_PARAMETER(pDriver);
   KdPrint(("Driver Unloading...\n"));
+}
+
+VOID EnumAllDriver(PDRIVER_OBJECT pDriver)
+{
+  //0x50 bytes (sizeof)
+  typedef struct _LDR_DATA_TABLE_ENTRY
+  {
+    // 模块加载的顺序
+    struct _LIST_ENTRY InLoadOrderLinks;
+    // 模块在内存的顺序
+    struct _LIST_ENTRY InMemoryOrderLinks;
+    // 模块初始化顺序
+    struct _LIST_ENTRY InInitializationOrderLinks;
+    // 模块基址
+    VOID* DllBase;
+    // 模块入口
+    VOID* EntryPoint;
+    // 模块大小
+    ULONG SizeOfImage;
+    // 模块全路径名称\??\ - 内核
+    struct _UNICODE_STRING FullDllName;
+    // 模块名称
+    struct _UNICODE_STRING BaseDllName;
+    ULONG Flags;
+    USHORT LoadCount;
+    USHORT TlsIndex;
+    struct _LIST_ENTRY HashLinks;
+    VOID* SectionPointer;
+    ULONG CheckSum;
+    ULONG TimeDateStamp;
+    VOID* LoadedImports;
+    VOID* EntryPointActivationContext;
+    VOID* PatchInformation;
+  }LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
+
+  PLDR_DATA_TABLE_ENTRY cur = pDriver->DriverSection;
+  ULONG uIndex = 0;
+
+  do
+  {
+    // 输出每个驱动模块信息
+    KdPrint(("[%02d]\n[SizeOfImage]: %08X\n[FullDllName]: %wZ\n[BaseDllName]: %wZ\n\n"
+      , uIndex, (ULONG)cur->SizeOfImage, &cur->FullDllName, &cur->BaseDllName));
+
+    // 查找下一个
+    uIndex++;
+    cur = (PLDR_DATA_TABLE_ENTRY)cur->InLoadOrderLinks.Flink;
+  } while (cur != pDriver->DriverSection);
 }
