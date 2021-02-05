@@ -13,6 +13,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDriver, PUNICODE_STRING pRegPath)
   return STATUS_SUCCESS;
 }
 
+
 VOID DriverUnload(PDRIVER_OBJECT pDriver)
 {
   KdPrint(("Driver Unloading...\n"));
