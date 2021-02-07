@@ -33,7 +33,6 @@ ntdll!_DEVICE_OBJECT
    +0x0ae Spare1           : Uint2B               // 保留供系统备用，该成员不可见
    +0x0b0 DeviceObjectExtension : Ptr32 _DEVOBJ_EXTENSION // 设备对象扩展
    +0x0b4 Reserved         : Ptr32 Void           // 保留
-
 */
 
 // 卸载驱动回调函数
@@ -85,6 +84,18 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT pDriver, PUNICODE_STRING pRegPath)
 VOID DriverUnload(PDRIVER_OBJECT pDriver)
 {
   UNREFERENCED_PARAMETER(pDriver);
+
+  // 如果设备对象创建成功，那么需要在卸载函数中删除设备对象和符号链接名称
+  // 必须要先删除符号链接名，再删除设备对象，否则会出现不可描述的问题
+  
+  // 删除符号链接名
+  UNICODE_STRING wZSymLinkName = { 0 };
+  RtlInitUnicodeString(&wZSymLinkName, SYMLINK_NAME);
+
+  IoDeleteSymbolicLink(&wZSymLinkName);
+
+  // 删除设备对象，如果有多个，需要遍历设备对象表
+  IoDeleteDevice(pDriver->DeviceObject);
   KdPrint(("Driver unloading...\n"));
 }
 
